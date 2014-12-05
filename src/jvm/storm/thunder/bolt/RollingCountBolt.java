@@ -45,8 +45,8 @@ public class RollingCountBolt extends BaseRichBolt {
     private static final long serialVersionUID = 5537727428628598519L;
     private static final Logger LOG = Logger.getLogger(RollingCountBolt.class);
     private static final int NUM_WINDOW_CHUNKS = 2;
-    private static final int DEFAULT_SLIDING_WINDOW_IN_SECONDS = NUM_WINDOW_CHUNKS * 2;
-    private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = DEFAULT_SLIDING_WINDOW_IN_SECONDS / NUM_WINDOW_CHUNKS;
+    private static final int DEFAULT_SLIDING_WINDOW_IN_SECONDS = NUM_WINDOW_CHUNKS * 60;
+    private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = 4; //DEFAULT_SLIDING_WINDOW_IN_SECONDS / NUM_WINDOW_CHUNKS;
     private static final String WINDOW_LENGTH_WARNING_TEMPLATE = "Actual window length is %d seconds when it should be %d seconds"
         + " (you can safely ignore this warning during the startup phase)";
 
@@ -104,7 +104,7 @@ public class RollingCountBolt extends BaseRichBolt {
         for (Entry<Object, Long> entry : counts.entrySet()) {
             Object obj = entry.getKey();
             Long count = entry.getValue();
-            collector.emit(new Values(obj, count, actualWindowLengthInSeconds));
+            collector.emit(new Values("" + count, obj.toString()));
         }
     }
 
@@ -116,7 +116,7 @@ public class RollingCountBolt extends BaseRichBolt {
 
 //    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("obj", "count", "actualWindowLengthInSeconds"));
+        declarer.declare(new Fields("key", "message"));
     }
 
     @Override
