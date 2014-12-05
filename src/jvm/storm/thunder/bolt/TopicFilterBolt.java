@@ -50,14 +50,20 @@ public class TopicFilterBolt extends BaseBasicBolt {
 	}
 	
 	public void reloadTopics() {
-		Set<String> homeworkWords = Sets.newHashSet("homework", "tarea");
+		Set<String> trivialWords = Sets.newHashSet("i", "si");
+		topics.addTopic("trivial", trivialWords);
+
+		Set<String> homeworkWords = Sets.newHashSet("homework", "tarea", "home work");
 		topics.addTopic("homework", homeworkWords);
 
-		Set<String> trafficWords = Sets.newHashSet("traffic", "trafico");
+		Set<String> trafficWords = Sets.newHashSet("slow", "traffic", "trafico");
 		topics.addTopic("traffic", trafficWords);
 
 		Set<String> flyingWords = Sets.newHashSet("landed", "aterrice");
 		topics.addTopic("flying", flyingWords);
+
+		Set<String> alcoholWords = Sets.newHashSet("beer", "alcohol", "rum", "whiskey", "whisky");
+		topics.addTopic("alcohol", alcoholWords);
 
 		LOG.debug("Reloaded topics: " + topics.getTopics());
 		//TODO read topics from db, reload

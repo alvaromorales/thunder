@@ -45,7 +45,7 @@ public class RollingCountBolt extends BaseRichBolt {
     private static final long serialVersionUID = 5537727428628598519L;
     private static final Logger LOG = Logger.getLogger(RollingCountBolt.class);
     private static final int NUM_WINDOW_CHUNKS = 2;
-    private static final int DEFAULT_SLIDING_WINDOW_IN_SECONDS = NUM_WINDOW_CHUNKS * 60;
+    private static final int DEFAULT_SLIDING_WINDOW_IN_SECONDS = NUM_WINDOW_CHUNKS * 2;
     private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = DEFAULT_SLIDING_WINDOW_IN_SECONDS / NUM_WINDOW_CHUNKS;
     private static final String WINDOW_LENGTH_WARNING_TEMPLATE = "Actual window length is %d seconds when it should be %d seconds"
         + " (you can safely ignore this warning during the startup phase)";
