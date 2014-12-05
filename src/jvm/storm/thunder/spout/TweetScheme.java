@@ -14,8 +14,23 @@ import backtype.storm.spout.Scheme;
 import backtype.storm.tuple.Fields;
 
 public class TweetScheme implements Scheme {
+
+	//Tweet field names
+	public static final String TWEET_ID_FIELD = "tweet_id";
+	public static final String TIME_FIELD = "time";
+	public static final String LAT_FIELD = "lat";
+	public static final String LON_FIELD = "lon";
+	public static final String GOOG_X_FIELD = "goog_x";
+	public static final String GOOG_Y_FIELD = "goog_y";
+	public static final String SENDER_ID_FIELD = "sender_id";
+	public static final String SENDER_NAME_FIELD = "sender_name";
+	public static final String SOURCE_FIELD = "source";
+	public static final String REPLY_TO_USER_ID_FIELD = "reply_to_user_id";
+	public static final String REPLY_TO_TWEET_ID_FIELD = "reply_to_tweet_id";
+	public static final String PLACE_ID_FIELD = "place_id";
+	public static final String TWEET_FIELD = "tweet";
 	
-	//Tweet fields
+	//Tweet field indices
 	public static final int TWEET_ID_COL = 0;
 	public static final int TIME_COL = 1;
 	public static final int LAT_COL = 2;
@@ -84,10 +99,10 @@ public class TweetScheme implements Scheme {
 	}
 
 	public Fields getOutputFields() {
-		return new Fields("tweet_id", "time", "lat", "lon", "goog_x", 
-				"goog_y", "sender_id", "sender_name", "source", 
-				"reply_to_user_id", "reply_to_tweet_id", 
-				"place_id", "tweet");
+		return new Fields(TWEET_ID_FIELD, TIME_FIELD, LAT_FIELD, LON_FIELD, GOOG_X_FIELD,
+				GOOG_Y_FIELD, SENDER_ID_FIELD, SENDER_NAME_FIELD, SOURCE_FIELD,
+				REPLY_TO_USER_ID_FIELD, REPLY_TO_TWEET_ID_FIELD,
+				PLACE_ID_FIELD, TWEET_FIELD);
 	}
 
 }
