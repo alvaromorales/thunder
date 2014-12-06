@@ -21,7 +21,6 @@ import backtype.storm.tuple.Tuple;
 import org.apache.log4j.Logger;
 
 import storm.thunder.tools.GroupedRankings;
-import storm.thunder.tools.Rankings;
 
 /**
  * This bolt merges incoming {@link Rankings}.
@@ -38,7 +37,7 @@ import storm.thunder.tools.Rankings;
 public final class TotalGroupRankingsBolt extends AbstractGroupRankerBolt {
 
   private static final long serialVersionUID = -8447525895532302198L;
-  private static final Logger LOG = Logger.getLogger(TotalRankingsBolt.class);
+  private static final Logger LOG = Logger.getLogger(TotalGroupRankingsBolt.class);
 
   public TotalGroupRankingsBolt() {
     super();

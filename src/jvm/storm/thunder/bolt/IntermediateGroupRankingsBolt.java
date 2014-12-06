@@ -38,7 +38,7 @@ import storm.thunder.tools.RankableObjectWithGroupAndFields;
 public final class IntermediateGroupRankingsBolt extends AbstractGroupRankerBolt {
 
   private static final long serialVersionUID = -1369800530256637409L;
-  private static final Logger LOG = Logger.getLogger(IntermediateRankingsBolt.class);
+  private static final Logger LOG = Logger.getLogger(IntermediateGroupRankingsBolt.class);
 
   public IntermediateGroupRankingsBolt() {
     super();
