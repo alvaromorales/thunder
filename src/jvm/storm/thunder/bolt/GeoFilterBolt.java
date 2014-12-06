@@ -16,6 +16,7 @@ import com.javadocmd.simplelatlng.util.LengthUnit;
 import storm.thunder.spout.MessagesScheme;
 import storm.thunder.spout.TweetScheme;
 import storm.thunder.util.Fence;
+import storm.thunder.util.TopologyFields;
 import storm.thunder.util.TupleHelpers;
 
 import backtype.storm.Config;
@@ -29,10 +30,6 @@ import backtype.storm.tuple.Values;
 public class GeoFilterBolt extends BaseBasicBolt {
 	
     private static final Logger LOG = Logger.getLogger(GeoFilterBolt.class);
-
-	public static final String ID_FIELD = "id";
-	public static final String TYPE_FIELD = "type";
-	public static final String TWEET_FIELD = "tweet";
 
 	private static final long serialVersionUID = 6192361668102197870L;
 
@@ -57,8 +54,11 @@ public class GeoFilterBolt extends BaseBasicBolt {
 			if (lat.equals(TweetScheme.NO_LOCATION) && lon.equals(TweetScheme.NO_LOCATION)) {
 				return;
 			}
+			
+			List<String> matchingFences = getMatchingFences(new LatLng(lat, lon));
+			LOG.debug("Tweet matched " + matchingFences.size() + " fences");
 
-			for (String fence_id : getMatchingFences(new LatLng(lat, lon))) {
+			for (String fence_id : matchingFences) {
 				collector.emit(new Values(fence_id, fenceTypes.get(fence_id), tweet));
 			}
 		}
@@ -71,7 +71,7 @@ public class GeoFilterBolt extends BaseBasicBolt {
 			UUID id = UUID.randomUUID();
 			fenceTypes.put(id.toString(), MessagesScheme.TREND_FEATURE);
 			
-			Fence fence = new Fence(40.7127, 74.0059, 1000);
+			Fence fence = new Fence(40.7127, -74.0059, 6000);
 			fences.put(id.toString(), fence);
 		}
 		LOG.info("Updated fences");
@@ -91,8 +91,8 @@ public class GeoFilterBolt extends BaseBasicBolt {
 		return matchingFences;
 	}
 
-	public void declareOutputFields(OutputFieldsDeclarer ofd) {
-		ofd.declare(new Fields(ID_FIELD, TYPE_FIELD, TWEET_FIELD));
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		declarer.declare(new Fields(TopologyFields.ID_FIELD, TopologyFields.TYPE_FIELD, TopologyFields.TWEET_FIELD));
 	}
 
 	@Override

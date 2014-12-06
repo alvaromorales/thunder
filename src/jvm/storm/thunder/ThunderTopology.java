@@ -3,23 +3,23 @@ package storm.thunder;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.json.simple.JSONArray;
-
 import storm.kafka.KafkaSpout;
 import storm.kafka.SpoutConfig;
 import storm.kafka.ZkHosts;
 import storm.kafka.bolt.KafkaBolt;
-import storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
 import storm.kafka.bolt.selector.DefaultTopicSelector;
 import storm.thunder.bolt.GeoFilterBolt;
+import storm.thunder.bolt.HashtagFilterBolt;
+import storm.thunder.bolt.IntermediateRankingsBolt;
 import storm.thunder.bolt.RollingCountBolt;
-import storm.thunder.bolt.TopicFilterBolt;
-import storm.thunder.bolt.TweetSplitterBolt;
+import storm.thunder.bolt.TotalRankingsBolt;
+import storm.thunder.spout.ResultKafkaMapper;
 import storm.thunder.spout.TweetScheme;
 import storm.thunder.util.StormRunner;
 import backtype.storm.Config;
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.tuple.Fields;
 
 public class ThunderTopology {
 
@@ -38,20 +38,30 @@ public class ThunderTopology {
 		SpoutConfig spoutConfig = new SpoutConfig(zkHosts, KAFKA_TWEET_TOPIC, "/kafkastorm", UUID.randomUUID().toString());
 		spoutConfig.scheme = new SchemeAsMultiScheme(new TweetScheme());
 		KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
-		builder.setSpout("KafkaSpout", kafkaSpout);
+		builder.setSpout("kafkaSpout", kafkaSpout);
 
 		// Bolts
-		builder.setBolt("TweetSplitterBolt", new TweetSplitterBolt()).shuffleGrouping("KafkaSpout");
-		builder.setBolt("TopicFilterBolt", new TopicFilterBolt()).shuffleGrouping("TweetSplitterBolt");
-		builder.setBolt("GeoFilterBolt", new GeoFilterBolt()).shuffleGrouping("TopicFilterBolt");
-		builder.setBolt("RollingCountBolt", new RollingCountBolt()).globalGrouping("GeoFilterBolt");
+		builder.setBolt("geoFilterBolt", new GeoFilterBolt())
+			.shuffleGrouping("kafkaSpout");
+
+		builder.setBolt("hashtagFilterBolt", new HashtagFilterBolt())
+			.shuffleGrouping("geoFilterBolt");
+
+		builder.setBolt("rollingCountBolt", new RollingCountBolt())
+			.fieldsGrouping("hashtagFilterBolt", new Fields("obj"));
+		
+		builder.setBolt("intermediateRankingsBolt", new IntermediateRankingsBolt(10), 2)
+			.fieldsGrouping("rollingCountBolt", new Fields("obj"));
+		
+		builder.setBolt("totalRankingsBolt", new TotalRankingsBolt(10))
+        	.globalGrouping("intermediateRankingsBolt");
 		
 		// Kafka Output Bolt
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		KafkaBolt kafkaBolt = new KafkaBolt()
 				.withTopicSelector(new DefaultTopicSelector(KAFKA_OUTPUT_TOPIC))
-				.withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
-		builder.setBolt("KafkaBolt", kafkaBolt).shuffleGrouping("RollingCountBolt");
+				.withTupleToKafkaMapper(new ResultKafkaMapper());
+		builder.setBolt("kafkaBolt", kafkaBolt).globalGrouping("totalRankingsBolt");
 		
 		Properties props = new Properties();
 		  props.put("metadata.broker.list", "localhost:9092");

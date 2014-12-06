@@ -46,7 +46,7 @@ public class TweetScheme implements Scheme {
 	public static final int TWEET_COL = 12;
 	
 	public static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
-	public static final Double NO_LOCATION = null;
+	public static final Double NO_LOCATION = Double.MIN_VALUE;
 
 	private static final long serialVersionUID = 4162296434312733491L;
 
