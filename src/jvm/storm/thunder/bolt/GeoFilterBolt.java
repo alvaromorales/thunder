@@ -3,7 +3,6 @@ package storm.thunder.bolt;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -56,7 +55,7 @@ public class GeoFilterBolt extends BaseBasicBolt {
 			}
 			
 			List<String> matchingFences = getMatchingFences(new LatLng(lat, lon));
-			LOG.debug("Tweet matched " + matchingFences.size() + " fences");
+			LOG.debug("Tweet matched the following " + matchingFences.size() + " fence(s):" + matchingFences);
 
 			for (String fence_id : matchingFences) {
 				collector.emit(new Values(fence_id, fenceTypes.get(fence_id), tweet));
@@ -68,13 +67,34 @@ public class GeoFilterBolt extends BaseBasicBolt {
 		//TODO read redis
 		if (fenceTypes.isEmpty()) {
 			//generate a dummy fence around NYC
-			UUID id = UUID.randomUUID();
-			fenceTypes.put(id.toString(), MessagesScheme.TREND_FEATURE);
+			String nyId = "new-york";
+			fenceTypes.put(nyId.toString(), MessagesScheme.TREND_FEATURE);
 			
-			Fence fence = new Fence(40.7127, -74.0059, 6000);
-			fences.put(id.toString(), fence);
+			Fence nyFence = new Fence(40.7127, -74.0059, 400);
+			fences.put(nyId.toString(), nyFence);
+
+			//generate a dummy fence around SF
+			String sfId = "san-francisco";
+			fenceTypes.put(sfId, MessagesScheme.TREND_FEATURE);
+			
+			Fence sfFence = new Fence(37.7833, -122.4167, 100);
+			fences.put(sfId, sfFence);
+			
+			//generate a dummy fence around LA
+			String laId = "los-angeles";
+			fenceTypes.put(laId, MessagesScheme.TREND_FEATURE);
+			
+			Fence laFence = new Fence(34.0500, -118.2500, 100);
+			fences.put(laId, laFence);
+			
+			//generate a dummy fence around London
+			String londonId = "london";
+			fenceTypes.put(londonId, MessagesScheme.TREND_FEATURE);
+			
+			Fence londonFence = new Fence(51.5072, -0.1275, 2000);
+			fences.put(londonId, londonFence);
 		}
-		LOG.info("Updated fences");
+		LOG.info("Updated fences. Fences: " + fences.keySet());
 	}
 
 	private List<String> getMatchingFences(LatLng p) {

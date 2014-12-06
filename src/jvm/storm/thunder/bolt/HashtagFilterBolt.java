@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
-import storm.thunder.tools.HashtagFence;
+import storm.thunder.tools.Hashtag;
 import storm.thunder.util.TopologyFields;
 import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -31,10 +31,10 @@ public class HashtagFilterBolt extends BaseBasicBolt {
 		String tweet = (String) tuple.getValueByField(TopologyFields.TWEET_FIELD);
 		
 		Set<String> hashtags = getHashtags(tweet);
-		LOG.info("Number of hashtags: " + hashtags.size());
+		LOG.debug("Number of hashtags: " + hashtags.size());
 		
 		for (String hashtag : hashtags) {
-			collector.emit(new Values(new HashtagFence(id, hashtag), id, type, hashtag));
+			collector.emit(new Values(new Hashtag(id, hashtag), id, type, hashtag));
 		}
 	}
 	

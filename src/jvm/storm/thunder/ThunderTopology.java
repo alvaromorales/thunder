@@ -10,9 +10,9 @@ import storm.kafka.bolt.KafkaBolt;
 import storm.kafka.bolt.selector.DefaultTopicSelector;
 import storm.thunder.bolt.GeoFilterBolt;
 import storm.thunder.bolt.HashtagFilterBolt;
-import storm.thunder.bolt.IntermediateRankingsBolt;
+import storm.thunder.bolt.IntermediateGroupRankingsBolt;
 import storm.thunder.bolt.RollingCountBolt;
-import storm.thunder.bolt.TotalRankingsBolt;
+import storm.thunder.bolt.TotalGroupRankingsBolt;
 import storm.thunder.spout.ResultKafkaMapper;
 import storm.thunder.spout.TweetScheme;
 import storm.thunder.util.StormRunner;
@@ -50,18 +50,18 @@ public class ThunderTopology {
 		builder.setBolt("rollingCountBolt", new RollingCountBolt())
 			.fieldsGrouping("hashtagFilterBolt", new Fields("obj"));
 		
-		builder.setBolt("intermediateRankingsBolt", new IntermediateRankingsBolt(10), 2)
+		builder.setBolt("intermediateGroupRankingsBolt", new IntermediateGroupRankingsBolt(10), 2)
 			.fieldsGrouping("rollingCountBolt", new Fields("obj"));
 		
-		builder.setBolt("totalRankingsBolt", new TotalRankingsBolt(10))
-        	.globalGrouping("intermediateRankingsBolt");
+		builder.setBolt("totalGroupRankingsBolt", new TotalGroupRankingsBolt(10))
+        	.globalGrouping("intermediateGroupRankingsBolt");
 		
 		// Kafka Output Bolt
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		KafkaBolt kafkaBolt = new KafkaBolt()
 				.withTopicSelector(new DefaultTopicSelector(KAFKA_OUTPUT_TOPIC))
 				.withTupleToKafkaMapper(new ResultKafkaMapper());
-		builder.setBolt("kafkaBolt", kafkaBolt).globalGrouping("totalRankingsBolt");
+		builder.setBolt("kafkaBolt", kafkaBolt).globalGrouping("totalGroupRankingsBolt");
 		
 		Properties props = new Properties();
 		  props.put("metadata.broker.list", "localhost:9092");

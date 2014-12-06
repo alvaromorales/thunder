@@ -26,6 +26,8 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import org.apache.log4j.Logger;
+
+import storm.thunder.tools.Hashtag;
 import storm.thunder.tools.NthLastModifiedTimeTracker;
 import storm.thunder.tools.SlidingWindowCounter;
 import storm.thunder.util.TupleHelpers;
@@ -122,9 +124,10 @@ public class RollingCountBolt extends BaseRichBolt {
 
   private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
     for (Entry<Object, Long> entry : counts.entrySet()) {
-      Object obj = entry.getKey();
+      Hashtag obj = (Hashtag) entry.getKey();
       Long count = entry.getValue();
-      collector.emit(new Values(obj, count, actualWindowLengthInSeconds));
+      String group = obj.getFenceId();
+      collector.emit(new Values(obj, count, group, actualWindowLengthInSeconds));
     }
   }
 
@@ -136,7 +139,7 @@ public class RollingCountBolt extends BaseRichBolt {
 
   @Override
   public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    declarer.declare(new Fields("obj", "count", "actualWindowLengthInSeconds"));
+    declarer.declare(new Fields("obj", "count", "group", "actualWindowLengthInSeconds"));
   }
 
   @Override

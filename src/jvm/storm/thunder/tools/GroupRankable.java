@@ -18,21 +18,24 @@
 package storm.thunder.tools;
 
 /**
- * From storm.starter.tools.Rankable in the Apache Storm examples
+ * Forked from storm.starter.tools.Rankable in the Apache Storm examples
  * See https://github.com/apache/storm/tree/master/examples/storm-starter
- * @author miguno - Michael G.Noll
+ * Not entirely our code!
+ * @author miguno - Michael G.Noll, alvaromorales - Alvaro Morales
  * See http://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/
  */
-public interface Rankable extends Comparable<Rankable> {
+public interface GroupRankable extends Comparable<GroupRankable> {
 
   Object getObject();
 
   long getCount();
+  
+  Object getGroup();
 
   /**
    * Note: We do not defensively copy the object wrapped by the Rankable.  It is passed as is.
    *
    * @return a defensive copy
    */
-  Rankable copy();
+  GroupRankable copy();
 }

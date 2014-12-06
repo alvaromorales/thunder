@@ -2,26 +2,19 @@ package storm.thunder.tools;
 
 import java.io.Serializable;
 
-import storm.thunder.spout.MessagesScheme;
-
-public class HashtagFence implements Serializable {
+public class Hashtag implements Serializable {
 	
 	private static final long serialVersionUID = -5758175722450043199L;
 	private String fenceId;
-	private String type = MessagesScheme.TREND_FEATURE;
 	private String hashtag;
 	
-	public HashtagFence(String fenceId, String hashtag) {
+	public Hashtag(String fenceId, String hashtag) {
 		this.fenceId = fenceId;
 		this.hashtag = hashtag;
 	}
 
 	public String getFenceId() {
 		return fenceId;
-	}
-
-	public String getType() {
-		return type;
 	}
 
 	public String getHashtag() {
@@ -34,7 +27,6 @@ public class HashtagFence implements Serializable {
 		int result = 1;
 		result = prime * result + ((fenceId == null) ? 0 : fenceId.hashCode());
 		result = prime * result + ((hashtag == null) ? 0 : hashtag.hashCode());
-		result = prime * result + ((type == null) ? 0 : type.hashCode());
 		return result;
 	}
 
@@ -46,7 +38,7 @@ public class HashtagFence implements Serializable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		HashtagFence other = (HashtagFence) obj;
+		Hashtag other = (Hashtag) obj;
 		if (fenceId == null) {
 			if (other.fenceId != null)
 				return false;
@@ -56,11 +48,6 @@ public class HashtagFence implements Serializable {
 			if (other.hashtag != null)
 				return false;
 		} else if (!hashtag.equals(other.hashtag))
-			return false;
-		if (type == null) {
-			if (other.type != null)
-				return false;
-		} else if (!type.equals(other.type))
 			return false;
 		return true;
 	}
