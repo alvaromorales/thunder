@@ -61,7 +61,8 @@ public class ThunderTopology {
 
 		// Counting topology branch
 		builder.setBolt("countRollingCountBolt", new RollingCountBolt(), 3)
-			.shuffleGrouping("geoFilterBolt", MessagesScheme.COUNT_FEATURE);
+			.shuffleGrouping("geoFilterBolt", MessagesScheme.COUNT_FEATURE)
+			.shuffleGrouping("geoFilterBolt", MessagesScheme.TOTAL_FEATURE);
 
 		builder.setBolt("totalRollingCountBolt", new RollingCountBolt())
 			.globalGrouping("countRollingCountBolt");

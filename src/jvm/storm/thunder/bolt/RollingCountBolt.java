@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import storm.thunder.spout.MessagesScheme;
 import storm.thunder.tools.FenceStat;
 import storm.thunder.tools.NthLastModifiedTimeTracker;
 import storm.thunder.tools.SlidingWindowCounter;
@@ -138,8 +139,13 @@ public class RollingCountBolt extends AbstractFenceBolt {
 		
 		for (Object o : counts.keySet()) {
 			FenceStat st = (FenceStat) o;
+			
+			if (st.getFenceId().equals(MessagesScheme.TOTAL_COUNT_FIELD)) {
+				continue;
+			}
+			
 			if (!hasFence(st.getFenceId())) {
-				LOG.info("Removing stat \"" + st + "\" from counter since fence " + st.getFenceId() + " was deleted.");
+				LOG.debug("Removing stat \"" + st + "\" from counter since fence " + st.getFenceId() + " was deleted.");
 				toRemove.add(o);
 			}
 		}

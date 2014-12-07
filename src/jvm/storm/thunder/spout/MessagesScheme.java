@@ -9,7 +9,9 @@ public class MessagesScheme implements Scheme {
 	
 	public static final String TREND_FEATURE = "trend";
 	public static final String COUNT_FEATURE = "count";
-	public static final String TOPIC_FEATURE = "topic";
+	public static final String TOTAL_FEATURE = "total";
+	
+	public static final String TOTAL_COUNT_FIELD = "total_tweet_count";
 
 	private static final long serialVersionUID = -3037004756189554023L;
 

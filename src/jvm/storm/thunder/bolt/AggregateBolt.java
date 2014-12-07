@@ -104,6 +104,11 @@ public class AggregateBolt extends AbstractFenceBolt {
 		List<Object> toRemove = Lists.newArrayList();
 		for (Object key : results.keySet()) {
 			String fenceId = (String) key;
+			
+			if (fenceId.equals(MessagesScheme.TOTAL_COUNT_FIELD)) {
+				continue;
+			}
+			
 			if (!hasFence(fenceId)) {
 				toRemove.add(key);
 			}

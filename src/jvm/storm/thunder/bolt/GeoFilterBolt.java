@@ -38,6 +38,8 @@ public class GeoFilterBolt extends AbstractFenceBolt {
 			Double lat = (Double) tuple.getValueByField(TweetScheme.LAT_FIELD);
 			Double lon = (Double) tuple.getValueByField(TweetScheme.LON_FIELD);
 
+			collector.emit(MessagesScheme.TOTAL_FEATURE, new Values(new Count(MessagesScheme.TOTAL_COUNT_FIELD, 1)));
+
 			//Skip tweets that have no location information
 			if (lat.equals(TweetScheme.NO_LOCATION) && lon.equals(TweetScheme.NO_LOCATION)) {
 				return;
@@ -76,6 +78,7 @@ public class GeoFilterBolt extends AbstractFenceBolt {
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declareStream(MessagesScheme.TREND_FEATURE, new Fields(TopologyFields.ID_FIELD, TopologyFields.TYPE_FIELD, TopologyFields.TWEET_FIELD));
 		declarer.declareStream(MessagesScheme.COUNT_FEATURE, new Fields(TopologyFields.COUNT_FIELD));
+		declarer.declareStream(MessagesScheme.TOTAL_FEATURE, new Fields(TopologyFields.COUNT_FIELD));
 	}
 
 	@Override

@@ -75,9 +75,7 @@ public final class SlotBasedCounter<T> implements Serializable {
     // TODO refactor at some point ...
     if (obj instanceof Count) {
     	Count c = (Count) obj;
-    	LOG.info("Adding " + c.getCount() + " to fence= " + c.getFenceId() + " (original count " + counts[slot] + ")");
     	incrementCount(obj, slot, c.getCount());
-    	LOG.info("  .. updated to: " + counts[slot]);
     } else {
     	counts[slot]++;
     }
