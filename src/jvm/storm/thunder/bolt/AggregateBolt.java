@@ -91,7 +91,9 @@ public class AggregateBolt extends AbstractFenceBolt {
 	}
 
 	private void emitResults() {
-		collector.emit(new Values(results));
+		if (!results.isEmpty()) {
+			collector.emit(new Values(results));
+		}
 	}
 
 	@Override
