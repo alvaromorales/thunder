@@ -24,8 +24,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
-
 /**
  * This class provides per-slot counts of the occurrences of objects.
  * <p/>
@@ -43,8 +41,6 @@ public final class SlotBasedCounter<T> implements Serializable {
 
   private static final long serialVersionUID = 4858185737378394432L;
   
-  private static final Logger LOG = Logger.getLogger(SlotBasedCounter.class);
-
   private final Map<T, long[]> objToCounts = new HashMap<T, long[]>();
   private final int numSlots;
 
