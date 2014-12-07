@@ -18,6 +18,7 @@
 package storm.thunder.tools;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -111,6 +112,14 @@ public final class SlidingWindowCounter<T> implements Serializable {
     objCounter.wipeSlot(tailSlot);
     advanceHead();
     return counts;
+  }
+  
+  public Map<T, Long> getCounts() {
+	  return objCounter.getCounts();
+  }
+  
+  public void wipeObjects(Collection<T> objects) {
+	  objCounter.wipeObjects(objects);
   }
 
   private void advanceHead() {

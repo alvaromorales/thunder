@@ -21,11 +21,12 @@ import backtype.storm.Config;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.Lists;
 
 import storm.thunder.tools.Hashtag;
 import storm.thunder.tools.NthLastModifiedTimeTracker;
@@ -33,6 +34,7 @@ import storm.thunder.tools.SlidingWindowCounter;
 import storm.thunder.util.TupleHelpers;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -61,91 +63,124 @@ import java.util.Map.Entry;
  * @author miguno - Michael G.Noll
  * See http://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/
  */
-public class RollingCountBolt extends BaseRichBolt {
+public class RollingCountBolt extends AbstractFenceBolt {
 
-  private static final long serialVersionUID = 5537727428628598519L;
-  private static final Logger LOG = Logger.getLogger(RollingCountBolt.class);
-  private static final int NUM_WINDOW_CHUNKS = 5;
-  private static final int DEFAULT_SLIDING_WINDOW_IN_SECONDS = NUM_WINDOW_CHUNKS * 60;
-  private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = DEFAULT_SLIDING_WINDOW_IN_SECONDS / NUM_WINDOW_CHUNKS;
-  private static final String WINDOW_LENGTH_WARNING_TEMPLATE =
-      "Actual window length is %d seconds when it should be %d seconds"
-          + " (you can safely ignore this warning during the startup phase)";
+	private static final long serialVersionUID = 5537727428628598519L;
+	private static final Logger LOG = Logger.getLogger(RollingCountBolt.class);
+	private static final int NUM_WINDOW_CHUNKS = 5;
+	private static final int DEFAULT_SLIDING_WINDOW_IN_SECONDS = NUM_WINDOW_CHUNKS * 60;
+	private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = DEFAULT_SLIDING_WINDOW_IN_SECONDS / NUM_WINDOW_CHUNKS;
+	private static final int DEFAULT_CLEANUP_FREQUENCY_IN_SECONDS = 60;
+	private static final String WINDOW_LENGTH_WARNING_TEMPLATE =
+			"Actual window length is %d seconds when it should be %d seconds"
+					+ " (you can safely ignore this warning during the startup phase)";
 
-  private final SlidingWindowCounter<Object> counter;
-  private final int windowLengthInSeconds;
-  private final int emitFrequencyInSeconds;
-  private OutputCollector collector;
-  private NthLastModifiedTimeTracker lastModifiedTracker;
+	private final SlidingWindowCounter<Object> counter;
+	private final int windowLengthInSeconds;
+	private final int emitFrequencyInSeconds;
+	private final int cleanupFrequencyInSeconds;
+	private NthLastModifiedTimeTracker lastModifiedTracker;
 
-  public RollingCountBolt() {
-    this(DEFAULT_SLIDING_WINDOW_IN_SECONDS, DEFAULT_EMIT_FREQUENCY_IN_SECONDS);
-  }
+	private int cleanupCounter;
 
-  public RollingCountBolt(int windowLengthInSeconds, int emitFrequencyInSeconds) {
-    this.windowLengthInSeconds = windowLengthInSeconds;
-    this.emitFrequencyInSeconds = emitFrequencyInSeconds;
-    counter = new SlidingWindowCounter<Object>(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
-        this.emitFrequencyInSeconds));
-  }
+	public RollingCountBolt() {
+		this(DEFAULT_SLIDING_WINDOW_IN_SECONDS, DEFAULT_EMIT_FREQUENCY_IN_SECONDS, DEFAULT_CLEANUP_FREQUENCY_IN_SECONDS);
+	}
 
-  private int deriveNumWindowChunksFrom(int windowLengthInSeconds, int windowUpdateFrequencyInSeconds) {
-    return windowLengthInSeconds / windowUpdateFrequencyInSeconds;
-  }
+	public RollingCountBolt(int windowLengthInSeconds, int emitFrequencyInSeconds, int cleanupFrequencyInSeconds) {
+		this.windowLengthInSeconds = windowLengthInSeconds;
 
-  @SuppressWarnings("rawtypes")
-  @Override
-  public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-    this.collector = collector;
-    lastModifiedTracker = new NthLastModifiedTimeTracker(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
-        this.emitFrequencyInSeconds));
-  }
+		if (cleanupFrequencyInSeconds < emitFrequencyInSeconds) {
+			throw new IllegalArgumentException("Cleanup frequency must be greater than the emit frequency");
+		}
+		this.emitFrequencyInSeconds = emitFrequencyInSeconds;
+		this.cleanupFrequencyInSeconds = cleanupFrequencyInSeconds;
+		this.cleanupCounter = 0;
 
-  @Override
-  public void execute(Tuple tuple) {
-    if (TupleHelpers.isTickTuple(tuple)) {
-      LOG.debug("Received tick tuple, triggering emit of current window counts");
-      emitCurrentWindowCounts();
-    }
-    else {
-      countObjAndAck(tuple);
-    }
-  }
+		counter = new SlidingWindowCounter<Object>(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
+				this.emitFrequencyInSeconds));
+	}
 
-  private void emitCurrentWindowCounts() {
-    Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
-    int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();
-    lastModifiedTracker.markAsModified();
-    if (actualWindowLengthInSeconds != windowLengthInSeconds) {
-      LOG.warn(String.format(WINDOW_LENGTH_WARNING_TEMPLATE, actualWindowLengthInSeconds, windowLengthInSeconds));
-    }
-    emit(counts, actualWindowLengthInSeconds);
-  }
+	private int deriveNumWindowChunksFrom(int windowLengthInSeconds, int windowUpdateFrequencyInSeconds) {
+		return windowLengthInSeconds / windowUpdateFrequencyInSeconds;
+	}
 
-  private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
-    for (Entry<Object, Long> entry : counts.entrySet()) {
-      Hashtag obj = (Hashtag) entry.getKey();
-      Long count = entry.getValue();
-      String group = obj.getFenceId();
-      collector.emit(new Values(obj, count, group, actualWindowLengthInSeconds));
-    }
-  }
+	@SuppressWarnings("rawtypes")
+	@Override
+	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+		super.prepare(stormConf, context, collector);
+		lastModifiedTracker = new NthLastModifiedTimeTracker(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
+				this.emitFrequencyInSeconds));
+	}
 
-  private void countObjAndAck(Tuple tuple) {
-    Object obj = tuple.getValue(0);
-    counter.incrementCount(obj);
-    collector.ack(tuple);
-  }
+	@Override
+	public void execute(Tuple tuple) {
+		if (TupleHelpers.isTickTuple(tuple)) {
+			LOG.debug("Received tick tuple, triggering emit of current window counts");
 
-  @Override
-  public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    declarer.declare(new Fields("obj", "count", "group", "actualWindowLengthInSeconds"));
-  }
+			cleanupCounter += emitFrequencyInSeconds;
+			if (cleanupCounter > cleanupFrequencyInSeconds) {
+				updateFences();
+				cleanupCounts();
+				cleanupCounter = 0;
+			}
 
-  @Override
-  public Map<String, Object> getComponentConfiguration() {
-    Map<String, Object> conf = new HashMap<String, Object>();
-    conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, emitFrequencyInSeconds);
-    return conf;
-  }
+			emitCurrentWindowCounts();
+		}
+		else {
+			countObjAndAck(tuple);
+		}
+	}
+
+	private void cleanupCounts() {
+		Map<Object, Long> counts = counter.getCounts();
+		List<Object> toRemove = Lists.newArrayList();
+		
+		for (Object o : counts.keySet()) {
+			Hashtag ht = (Hashtag) o;
+			if (!hasFence(ht.getFenceId())) {
+				LOG.info("Removing hashtag \"" + ht + "\" from counter since fence " + ht.getFenceId() + " was deleted.");
+				toRemove.add(o);
+			}
+		}
+		
+		counter.wipeObjects(toRemove);
+	}
+
+	private void emitCurrentWindowCounts() {
+		Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
+		int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();
+		lastModifiedTracker.markAsModified();
+		if (actualWindowLengthInSeconds != windowLengthInSeconds) {
+			LOG.warn(String.format(WINDOW_LENGTH_WARNING_TEMPLATE, actualWindowLengthInSeconds, windowLengthInSeconds));
+		}
+		emit(counts, actualWindowLengthInSeconds);
+	}
+
+	private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
+		for (Entry<Object, Long> entry : counts.entrySet()) {
+			Hashtag obj = (Hashtag) entry.getKey();
+			Long count = entry.getValue();
+			String group = obj.getFenceId();
+			collector.emit(new Values(obj, count, group, actualWindowLengthInSeconds));
+		}
+	}
+
+	private void countObjAndAck(Tuple tuple) {
+		Object obj = tuple.getValue(0);
+		counter.incrementCount(obj);
+		collector.ack(tuple);
+	}
+
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		declarer.declare(new Fields("obj", "count", "group", "actualWindowLengthInSeconds"));
+	}
+
+	@Override
+	public Map<String, Object> getComponentConfiguration() {
+		Map<String, Object> conf = new HashMap<String, Object>();
+		conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, emitFrequencyInSeconds);
+		return conf;
+	}
 }

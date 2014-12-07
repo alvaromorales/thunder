@@ -47,8 +47,8 @@ public final class TotalGroupRankingsBolt extends AbstractGroupRankerBolt {
     super(topN);
   }
 
-  public TotalGroupRankingsBolt(int topN, int emitFrequencyInSeconds) {
-    super(topN, emitFrequencyInSeconds);
+  public TotalGroupRankingsBolt(int topN, int emitFrequencyInSeconds, int cleanupFrequencyInSeconds) {
+    super(topN, emitFrequencyInSeconds, cleanupFrequencyInSeconds);
   }
 
   @Override

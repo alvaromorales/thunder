@@ -18,6 +18,7 @@
 package storm.thunder.tools;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -120,5 +121,11 @@ public final class SlotBasedCounter<T> implements Serializable {
       objToCounts.remove(obj);
     }
   }
-
+  
+  public void wipeObjects(Collection<T> objects) {
+	  for (T obj : objects) {
+		  objToCounts.remove(obj);
+	  }
+  }
+  
 }

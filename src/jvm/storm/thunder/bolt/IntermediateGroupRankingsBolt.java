@@ -48,8 +48,8 @@ public final class IntermediateGroupRankingsBolt extends AbstractGroupRankerBolt
     super(topN);
   }
 
-  public IntermediateGroupRankingsBolt(int topN, int emitFrequencyInSeconds) {
-    super(topN, emitFrequencyInSeconds);
+  public IntermediateGroupRankingsBolt(int topN, int emitFrequencyInSeconds, int cleanupFrequencyInSeconds) {
+    super(topN, emitFrequencyInSeconds, cleanupFrequencyInSeconds);
   }
 
   @Override

@@ -54,6 +54,10 @@ public abstract class AbstractFenceBolt extends BaseRichBolt {
 		return fences.values();
 	}
 
+	public boolean hasFence(String id) {
+		return fences.containsKey(id);
+	}
+
 	public Fence getFence(String id) {
 		return fences.get(id);
 	}
@@ -64,6 +68,10 @@ public abstract class AbstractFenceBolt extends BaseRichBolt {
 			return fence.getType();
 		}
 		return null;
+	}
+
+	public OutputCollector getCollector() {
+		return collector;
 	}
 
 }
