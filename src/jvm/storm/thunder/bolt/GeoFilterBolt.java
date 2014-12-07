@@ -2,46 +2,33 @@ package storm.thunder.bolt;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.javadocmd.simplelatlng.LatLng;
 import com.javadocmd.simplelatlng.LatLngTool;
 import com.javadocmd.simplelatlng.util.LengthUnit;
 
-import storm.thunder.spout.MessagesScheme;
 import storm.thunder.spout.TweetScheme;
-import storm.thunder.util.Fence;
+import storm.thunder.tools.Fence;
 import storm.thunder.util.TopologyFields;
 import storm.thunder.util.TupleHelpers;
 
 import backtype.storm.Config;
-import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseBasicBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class GeoFilterBolt extends BaseBasicBolt {
+public class GeoFilterBolt extends AbstractFenceBolt {
 	
     private static final Logger LOG = Logger.getLogger(GeoFilterBolt.class);
 
 	private static final long serialVersionUID = 6192361668102197870L;
-
-	private Map<String, String> fenceTypes;
-	private Map<String, Fence> fences;
-
-	public GeoFilterBolt() {
-		this.fenceTypes = Maps.newHashMap();
-		this.fences = Maps.newHashMap();
-		updateFences();
-	}
-
-	public void execute(Tuple tuple, BasicOutputCollector collector) {
+	
+	@Override
+	public void execute(Tuple tuple) {
 		if (TupleHelpers.isTickTuple(tuple)) {
 			updateFences();
 		} else {
@@ -58,53 +45,19 @@ public class GeoFilterBolt extends BaseBasicBolt {
 			LOG.debug("Tweet matched the following " + matchingFences.size() + " fence(s):" + matchingFences);
 
 			for (String fence_id : matchingFences) {
-				collector.emit(new Values(fence_id, fenceTypes.get(fence_id), tweet));
+				collector.emit(new Values(fence_id, getFenceType(fence_id), tweet));
 			}
 		}
-	}
-
-	private void updateFences() {
-		//TODO read redis
-		if (fenceTypes.isEmpty()) {
-			//generate a dummy fence around NYC
-			String nyId = "new-york";
-			fenceTypes.put(nyId.toString(), MessagesScheme.TREND_FEATURE);
-			
-			Fence nyFence = new Fence(40.7127, -74.0059, 400);
-			fences.put(nyId.toString(), nyFence);
-
-			//generate a dummy fence around SF
-			String sfId = "san-francisco";
-			fenceTypes.put(sfId, MessagesScheme.TREND_FEATURE);
-			
-			Fence sfFence = new Fence(37.7833, -122.4167, 100);
-			fences.put(sfId, sfFence);
-			
-			//generate a dummy fence around LA
-			String laId = "los-angeles";
-			fenceTypes.put(laId, MessagesScheme.TREND_FEATURE);
-			
-			Fence laFence = new Fence(34.0500, -118.2500, 100);
-			fences.put(laId, laFence);
-			
-			//generate a dummy fence around London
-			String londonId = "london";
-			fenceTypes.put(londonId, MessagesScheme.TREND_FEATURE);
-			
-			Fence londonFence = new Fence(51.5072, -0.1275, 2000);
-			fences.put(londonId, londonFence);
-		}
-		LOG.info("Updated fences. Fences: " + fences.keySet());
 	}
 
 	private List<String> getMatchingFences(LatLng p) {
 		List<String> matchingFences = Lists.newArrayList();
 
-		for (Entry<String, Fence> entry : fences.entrySet()) {
-			LatLng fencePoint = entry.getValue().getPoint();
-			int radius = entry.getValue().getRadius();
+		for (Fence fence : getFences()) {
+			LatLng fencePoint = fence.getPoint();
+			int radius = fence.getRadius();
 			if (LatLngTool.distance(fencePoint, p, LengthUnit.KILOMETER) <= radius) {
-				matchingFences.add(entry.getKey());
+				matchingFences.add(fence.getId());
 			}
 		}
 
