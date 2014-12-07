@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class provides per-slot counts of the occurrences of objects.
  * <p/>
@@ -40,6 +42,8 @@ import java.util.Set;
 public final class SlotBasedCounter<T> implements Serializable {
 
   private static final long serialVersionUID = 4858185737378394432L;
+  
+  private static final Logger LOG = Logger.getLogger(SlotBasedCounter.class);
 
   private final Map<T, long[]> objToCounts = new HashMap<T, long[]>();
   private final int numSlots;
@@ -49,6 +53,16 @@ public final class SlotBasedCounter<T> implements Serializable {
       throw new IllegalArgumentException("Number of slots must be greater than zero (you requested " + numSlots + ")");
     }
     this.numSlots = numSlots;
+  }
+  
+  public void incrementCount(T obj, int slot, long count) {
+    long[] counts = objToCounts.get(obj);
+    if (counts == null) {
+      counts = new long[this.numSlots];
+      objToCounts.put(obj, counts);
+    }
+
+    counts[slot] += count;
   }
 
   public void incrementCount(T obj, int slot) {
@@ -60,7 +74,10 @@ public final class SlotBasedCounter<T> implements Serializable {
 
     // TODO refactor at some point ...
     if (obj instanceof Count) {
-    	counts[slot] += ((Count) obj).getCount();
+    	Count c = (Count) obj;
+    	LOG.info("Adding " + c.getCount() + " to fence= " + c.getFenceId() + " (original count " + counts[slot] + ")");
+    	incrementCount(obj, slot, c.getCount());
+    	LOG.info("  .. updated to: " + counts[slot]);
     } else {
     	counts[slot]++;
     }

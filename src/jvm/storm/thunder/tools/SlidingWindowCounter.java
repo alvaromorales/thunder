@@ -97,6 +97,10 @@ public final class SlidingWindowCounter<T> implements Serializable {
     objCounter.incrementCount(obj, headSlot);
   }
 
+  public void incrementCount(T obj, long count) {
+    objCounter.incrementCount(obj, headSlot, count);
+  }
+
   /**
    * Return the current (total) counts of all tracked objects, then advance the window.
    * <p/>

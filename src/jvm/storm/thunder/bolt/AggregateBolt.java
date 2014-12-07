@@ -80,10 +80,11 @@ public class AggregateBolt extends AbstractFenceBolt {
 					results.put(fenceId, fenceResult);
 				}
 			} else if (tuple.getSourceComponent().equals("totalRollingCountBolt")) {
-				Count c = (Count) tuple.getValue(0);
 				JSONObject fenceResult = new JSONObject();
+				Count c = (Count) tuple.getValue(0);
+				long count = (Long) tuple.getValue(1);
 				fenceResult.put("feature", MessagesScheme.COUNT_FEATURE);
-				fenceResult.put("count", c.getCount());
+				fenceResult.put("count", count);
 				results.put(c.getFenceId(), fenceResult);
 			}
 		}

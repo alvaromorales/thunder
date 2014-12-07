@@ -167,8 +167,14 @@ public class RollingCountBolt extends AbstractFenceBolt {
 	}
 
 	private void countObjAndAck(Tuple tuple) {
-		Object obj = tuple.getValue(0);
-		counter.incrementCount(obj);
+		if (tuple.getSourceComponent().equals("countRollingCountBolt")) {
+			Object obj = tuple.getValue(0);
+			long count = (Long) tuple.getValue(1);
+			counter.incrementCount(obj, count);
+		} else {
+			Object obj = tuple.getValue(0);
+			counter.incrementCount(obj);
+		}
 		collector.ack(tuple);
 	}
 
