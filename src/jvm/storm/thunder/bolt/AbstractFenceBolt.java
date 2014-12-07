@@ -73,5 +73,7 @@ public abstract class AbstractFenceBolt extends BaseRichBolt {
 	public OutputCollector getCollector() {
 		return collector;
 	}
+	
+	public abstract void cleanupFences();
 
 }

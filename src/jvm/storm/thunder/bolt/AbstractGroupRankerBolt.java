@@ -84,7 +84,7 @@ public abstract class AbstractGroupRankerBolt extends AbstractFenceBolt {
 			cleanupCounter += emitFrequencyInSeconds;
 			if (cleanupCounter > cleanupFrequencyInSeconds) {
 				updateFences();
-				cleanupRankings();
+				cleanupFences();
 				cleanupCounter = 0;
 			}
 			
@@ -96,7 +96,7 @@ public abstract class AbstractGroupRankerBolt extends AbstractFenceBolt {
 		}
 	}
 
-	private void cleanupRankings() {
+	public void cleanupFences() {
 		ImmutableSet<Object> groups = rankings.getRankings().keySet();
 		List<Object> toRemove = Lists.newArrayList();
 		

@@ -29,7 +29,7 @@ public class Fence implements Serializable {
 			double lat = Double.valueOf(fields[FencesDB.LAT_COL]);
 			double lon = Double.valueOf(fields[FencesDB.LON_COL]);
 			int radius = Integer.valueOf(fields[FencesDB.RADIUS_COL]);
-			String type = fields[FencesDB.RADIUS_COL];
+			String type = fields[FencesDB.TYPE_COL];
 			return new Fence(id, lat, lon, radius, type);
 		} catch(ClassCastException e) {
 			throw new IllegalArgumentException("Not a valid fenceString: " + fenceStr);

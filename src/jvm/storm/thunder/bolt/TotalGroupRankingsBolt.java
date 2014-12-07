@@ -36,31 +36,31 @@ import storm.thunder.tools.GroupedRankings;
  */
 public final class TotalGroupRankingsBolt extends AbstractGroupRankerBolt {
 
-  private static final long serialVersionUID = -8447525895532302198L;
-  private static final Logger LOG = Logger.getLogger(TotalGroupRankingsBolt.class);
+	private static final long serialVersionUID = -8447525895532302198L;
+	private static final Logger LOG = Logger.getLogger(TotalGroupRankingsBolt.class);
 
-  public TotalGroupRankingsBolt() {
-    super();
-  }
+	public TotalGroupRankingsBolt() {
+		super();
+	}
 
-  public TotalGroupRankingsBolt(int topN) {
-    super(topN);
-  }
+	public TotalGroupRankingsBolt(int topN) {
+		super(topN);
+	}
 
-  public TotalGroupRankingsBolt(int topN, int emitFrequencyInSeconds, int cleanupFrequencyInSeconds) {
-    super(topN, emitFrequencyInSeconds, cleanupFrequencyInSeconds);
-  }
+	public TotalGroupRankingsBolt(int topN, int emitFrequencyInSeconds, int cleanupFrequencyInSeconds) {
+		super(topN, emitFrequencyInSeconds, cleanupFrequencyInSeconds);
+	}
 
-  @Override
-  void updateRankingsWithTuple(Tuple tuple) {
-    GroupedRankings rankingsToBeMerged = (GroupedRankings) tuple.getValue(0);
-    super.getRankings().updateWith(rankingsToBeMerged);
-    super.getRankings().pruneZeroCounts();
-  }
+	@Override
+	void updateRankingsWithTuple(Tuple tuple) {
+		GroupedRankings rankingsToBeMerged = (GroupedRankings) tuple.getValue(0);
+		super.getRankings().updateWith(rankingsToBeMerged);
+		super.getRankings().pruneZeroCounts();
+	}
 
-  @Override
-  Logger getLogger() {
-    return LOG;
-  }
+	@Override
+	Logger getLogger() {
+		return LOG;
+	}
 
 }

@@ -2,7 +2,7 @@ package storm.thunder.tools;
 
 import java.io.Serializable;
 
-public class Hashtag implements Serializable {
+public class Hashtag implements FenceStat, Serializable {
 	
 	private static final long serialVersionUID = -5758175722450043199L;
 	private String fenceId;

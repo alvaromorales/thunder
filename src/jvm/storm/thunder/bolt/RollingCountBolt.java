@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
-import storm.thunder.tools.Hashtag;
+import storm.thunder.tools.FenceStat;
 import storm.thunder.tools.NthLastModifiedTimeTracker;
 import storm.thunder.tools.SlidingWindowCounter;
 import storm.thunder.util.TupleHelpers;
@@ -121,7 +121,7 @@ public class RollingCountBolt extends AbstractFenceBolt {
 			cleanupCounter += emitFrequencyInSeconds;
 			if (cleanupCounter > cleanupFrequencyInSeconds) {
 				updateFences();
-				cleanupCounts();
+				cleanupFences();
 				cleanupCounter = 0;
 			}
 
@@ -132,14 +132,14 @@ public class RollingCountBolt extends AbstractFenceBolt {
 		}
 	}
 
-	private void cleanupCounts() {
+	public void cleanupFences() {
 		Map<Object, Long> counts = counter.getCounts();
 		List<Object> toRemove = Lists.newArrayList();
 		
 		for (Object o : counts.keySet()) {
-			Hashtag ht = (Hashtag) o;
-			if (!hasFence(ht.getFenceId())) {
-				LOG.info("Removing hashtag \"" + ht + "\" from counter since fence " + ht.getFenceId() + " was deleted.");
+			FenceStat st = (FenceStat) o;
+			if (!hasFence(st.getFenceId())) {
+				LOG.info("Removing stat \"" + st + "\" from counter since fence " + st.getFenceId() + " was deleted.");
 				toRemove.add(o);
 			}
 		}
@@ -159,7 +159,7 @@ public class RollingCountBolt extends AbstractFenceBolt {
 
 	private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
 		for (Entry<Object, Long> entry : counts.entrySet()) {
-			Hashtag obj = (Hashtag) entry.getKey();
+			FenceStat obj = (FenceStat) entry.getKey();
 			Long count = entry.getValue();
 			String group = obj.getFenceId();
 			collector.emit(new Values(obj, count, group, actualWindowLengthInSeconds));

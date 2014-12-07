@@ -57,7 +57,13 @@ public final class SlotBasedCounter<T> implements Serializable {
       counts = new long[this.numSlots];
       objToCounts.put(obj, counts);
     }
-    counts[slot]++;
+
+    // TODO refactor at some point ...
+    if (obj instanceof Count) {
+    	counts[slot] += ((Count) obj).getCount();
+    } else {
+    	counts[slot]++;
+    }
   }
 
   public long getCount(T obj, int slot) {

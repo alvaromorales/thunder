@@ -10,7 +10,9 @@ import com.javadocmd.simplelatlng.LatLng;
 import com.javadocmd.simplelatlng.LatLngTool;
 import com.javadocmd.simplelatlng.util.LengthUnit;
 
+import storm.thunder.spout.MessagesScheme;
 import storm.thunder.spout.TweetScheme;
+import storm.thunder.tools.Count;
 import storm.thunder.tools.Fence;
 import storm.thunder.util.TopologyFields;
 import storm.thunder.util.TupleHelpers;
@@ -44,8 +46,15 @@ public class GeoFilterBolt extends AbstractFenceBolt {
 			List<String> matchingFences = getMatchingFences(new LatLng(lat, lon));
 			LOG.debug("Tweet matched the following " + matchingFences.size() + " fence(s):" + matchingFences);
 
-			for (String fence_id : matchingFences) {
-				collector.emit(new Values(fence_id, getFenceType(fence_id), tweet));
+			for (String fenceId : matchingFences) {
+				String type = getFenceType(fenceId);
+				if (type.equals(MessagesScheme.TREND_FEATURE)) {
+					LOG.debug("Emitting to trend branch: " + fenceId);
+					collector.emit(MessagesScheme.TREND_FEATURE, new Values(fenceId, type, tweet));
+				} else if (type.equals(MessagesScheme.COUNT_FEATURE)) {
+					LOG.debug("Emitting to count branch: " + fenceId);
+					collector.emit(MessagesScheme.COUNT_FEATURE, new Values(new Count(fenceId, 1)));
+				}
 			}
 		}
 	}
@@ -65,7 +74,8 @@ public class GeoFilterBolt extends AbstractFenceBolt {
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields(TopologyFields.ID_FIELD, TopologyFields.TYPE_FIELD, TopologyFields.TWEET_FIELD));
+		declarer.declareStream(MessagesScheme.TREND_FEATURE, new Fields(TopologyFields.ID_FIELD, TopologyFields.TYPE_FIELD, TopologyFields.TWEET_FIELD));
+		declarer.declareStream(MessagesScheme.COUNT_FEATURE, new Fields(TopologyFields.COUNT_FIELD));
 	}
 
 	@Override
@@ -74,6 +84,11 @@ public class GeoFilterBolt extends AbstractFenceBolt {
 		int tickFrequencyInSeconds = 10;
 		conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, tickFrequencyInSeconds);
 		return conf;
+	}
+
+	@Override
+	public void cleanupFences() {
+		// do nothing, cleanup handled in update
 	}
 
 }
