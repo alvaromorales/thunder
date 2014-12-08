@@ -11,24 +11,20 @@ import com.google.common.collect.Maps;
 import redis.clients.jedis.Jedis;
 import storm.thunder.tools.Fence;
 import storm.thunder.tools.FencesDB;
-import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.base.BaseRichBolt;
+import backtype.storm.topology.base.BaseBasicBolt;
 
-public abstract class AbstractFenceBolt extends BaseRichBolt {
+public abstract class AbstractFenceBolt extends BaseBasicBolt {
 
 	private static final long serialVersionUID = 1550490462033094045L;
     private static final Logger LOG = Logger.getLogger(AbstractFenceBolt.class);
 	
 	private Map<String, Fence> fences;
-	public OutputCollector collector;
 	private Jedis jedis;
 	
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void prepare(Map stormConf, TopologyContext context,
-			OutputCollector collector) {
-		this.collector = collector;
+	public void prepare(Map stormConf, TopologyContext context) {
 		this.jedis = new Jedis(FencesDB.REDIS_HOST, FencesDB.REDIS_PORT);
 		this.fences = Maps.newHashMap();
 		updateFences();
@@ -70,10 +66,6 @@ public abstract class AbstractFenceBolt extends BaseRichBolt {
 		return null;
 	}
 
-	public OutputCollector getCollector() {
-		return collector;
-	}
-	
 	public abstract void cleanupFences();
 
 }

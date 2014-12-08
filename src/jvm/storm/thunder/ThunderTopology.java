@@ -18,6 +18,7 @@ import storm.thunder.spout.MessagesScheme;
 import storm.thunder.spout.ResultKafkaMapper;
 import storm.thunder.spout.TweetScheme;
 import storm.thunder.util.StormRunner;
+import storm.thunder.util.TopologyFields;
 import backtype.storm.Config;
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.topology.TopologyBuilder;
@@ -61,16 +62,13 @@ public class ThunderTopology {
 
 		// Counting topology branch
 		builder.setBolt("countRollingCountBolt", new RollingCountBolt(), 3)
-			.shuffleGrouping("geoFilterBolt", MessagesScheme.COUNT_FEATURE)
-			.shuffleGrouping("geoFilterBolt", MessagesScheme.TOTAL_FEATURE);
-
-		builder.setBolt("totalRollingCountBolt", new RollingCountBolt())
-			.globalGrouping("countRollingCountBolt");
+			.fieldsGrouping("geoFilterBolt", MessagesScheme.COUNT_FEATURE, new Fields(TopologyFields.COUNT_FIELD))
+			.fieldsGrouping("geoFilterBolt", MessagesScheme.TOTAL_FEATURE, new Fields(TopologyFields.COUNT_FIELD));
 
 		// Aggregate bolt
 		builder.setBolt("aggregateBolt", new AggregateBolt())
 			.globalGrouping("totalGroupRankingsBolt")
-			.globalGrouping("totalRollingCountBolt");
+			.globalGrouping("countRollingCountBolt");
 
 		// Kafka Output Bolt
 		@SuppressWarnings({ "rawtypes", "unchecked" })

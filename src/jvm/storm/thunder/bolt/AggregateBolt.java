@@ -6,9 +6,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-
 import storm.thunder.spout.MessagesScheme;
 import storm.thunder.tools.Count;
 import storm.thunder.tools.GroupRankable;
@@ -16,12 +13,15 @@ import storm.thunder.tools.GroupedRankings;
 import storm.thunder.tools.Hashtag;
 import storm.thunder.util.TupleHelpers;
 import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 public class AggregateBolt extends AbstractFenceBolt {
 
@@ -37,16 +37,15 @@ public class AggregateBolt extends AbstractFenceBolt {
 	
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void prepare(Map stormConf, TopologyContext context,
-			OutputCollector collector) {
-		super.prepare(stormConf, context, collector);
+	public void prepare(Map stormConf, TopologyContext context) {
+		super.prepare(stormConf, context);
 		this.cleanupCounter = 0;
 		this.results = new JSONObject();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void execute(Tuple tuple) {
+	public void execute(Tuple tuple, BasicOutputCollector collector) {
 		if (TupleHelpers.isTickTuple(tuple)) {
 			LOG.debug("Received tick tuple, triggering emit of current results");
 
@@ -57,7 +56,7 @@ public class AggregateBolt extends AbstractFenceBolt {
 				cleanupCounter = 0;
 			}
 
-			emitResults();
+			emitResults(collector);
 		} else {
 			if (tuple.getSourceComponent().equals("totalGroupRankingsBolt")) {
 				GroupedRankings gr = (GroupedRankings) tuple.getValueByField("rankings");
@@ -79,7 +78,7 @@ public class AggregateBolt extends AbstractFenceBolt {
 					fenceResult.put("trends", hashtags);
 					results.put(fenceId, fenceResult);
 				}
-			} else if (tuple.getSourceComponent().equals("totalRollingCountBolt")) {
+			} else if (tuple.getSourceComponent().equals("countRollingCountBolt")) {
 				JSONObject fenceResult = new JSONObject();
 				Count c = (Count) tuple.getValue(0);
 				long count = (Long) tuple.getValue(1);
@@ -90,7 +89,7 @@ public class AggregateBolt extends AbstractFenceBolt {
 		}
 	}
 
-	private void emitResults() {
+	private void emitResults(BasicOutputCollector collector) {
 		if (!results.isEmpty()) {
 			collector.emit(new Values(results));
 		}

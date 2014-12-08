@@ -1,7 +1,6 @@
 package storm.thunder.bolt;
 
 import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
 import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
@@ -79,7 +78,7 @@ public abstract class AbstractGroupRankerBolt extends AbstractFenceBolt {
 	 * This method functions as a template method (design pattern).
 	 */
 	@Override
-	public final void execute(Tuple tuple) {
+	public final void execute(Tuple tuple, BasicOutputCollector collector) {
 		if (TupleHelpers.isTickTuple(tuple)) {
 			cleanupCounter += emitFrequencyInSeconds;
 			if (cleanupCounter > cleanupFrequencyInSeconds) {
@@ -115,7 +114,7 @@ public abstract class AbstractGroupRankerBolt extends AbstractFenceBolt {
 
 	abstract void updateRankingsWithTuple(Tuple tuple);
 
-	private void emitRankings(OutputCollector collector) {
+	private void emitRankings(BasicOutputCollector collector) {
 		collector.emit(new Values(rankings.copy()));
 		getLogger().debug("Rankings: " + rankings);
 	}

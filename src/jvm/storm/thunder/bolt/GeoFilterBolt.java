@@ -5,23 +5,23 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
-import com.javadocmd.simplelatlng.LatLng;
-import com.javadocmd.simplelatlng.LatLngTool;
-import com.javadocmd.simplelatlng.util.LengthUnit;
-
 import storm.thunder.spout.MessagesScheme;
 import storm.thunder.spout.TweetScheme;
 import storm.thunder.tools.Count;
 import storm.thunder.tools.Fence;
 import storm.thunder.util.TopologyFields;
 import storm.thunder.util.TupleHelpers;
-
 import backtype.storm.Config;
+import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+
+import com.google.common.collect.Lists;
+import com.javadocmd.simplelatlng.LatLng;
+import com.javadocmd.simplelatlng.LatLngTool;
+import com.javadocmd.simplelatlng.util.LengthUnit;
 
 public class GeoFilterBolt extends AbstractFenceBolt {
 	
@@ -30,7 +30,7 @@ public class GeoFilterBolt extends AbstractFenceBolt {
 	private static final long serialVersionUID = 6192361668102197870L;
 	
 	@Override
-	public void execute(Tuple tuple) {
+	public void execute(Tuple tuple, BasicOutputCollector collector) {
 		if (TupleHelpers.isTickTuple(tuple)) {
 			updateFences();
 		} else {

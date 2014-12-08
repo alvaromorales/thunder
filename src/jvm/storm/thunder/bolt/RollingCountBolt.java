@@ -17,27 +17,27 @@
  */
 package storm.thunder.bolt;
 
-import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
-import org.apache.log4j.Logger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import com.google.common.collect.Lists;
+import org.apache.log4j.Logger;
 
 import storm.thunder.spout.MessagesScheme;
 import storm.thunder.tools.FenceStat;
 import storm.thunder.tools.NthLastModifiedTimeTracker;
 import storm.thunder.tools.SlidingWindowCounter;
 import storm.thunder.util.TupleHelpers;
+import backtype.storm.Config;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.BasicOutputCollector;
+import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.google.common.collect.Lists;
 
 /**
  * This bolt performs rolling counts of incoming objects, i.e. sliding window based counting.
@@ -108,14 +108,14 @@ public class RollingCountBolt extends AbstractFenceBolt {
 
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		super.prepare(stormConf, context, collector);
+	public void prepare(Map stormConf, TopologyContext context) {
+		super.prepare(stormConf, context);
 		lastModifiedTracker = new NthLastModifiedTimeTracker(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
 				this.emitFrequencyInSeconds));
 	}
 
 	@Override
-	public void execute(Tuple tuple) {
+	public void execute(Tuple tuple, BasicOutputCollector collector) {
 		if (TupleHelpers.isTickTuple(tuple)) {
 			LOG.debug("Received tick tuple, triggering emit of current window counts");
 
@@ -126,44 +126,43 @@ public class RollingCountBolt extends AbstractFenceBolt {
 				cleanupCounter = 0;
 			}
 
-			emitCurrentWindowCounts();
-		}
-		else {
-			countObjAndAck(tuple);
+			emitCurrentWindowCounts(collector);
+		} else {
+			countObjAndAck(tuple, collector);
 		}
 	}
 
 	public void cleanupFences() {
 		Map<Object, Long> counts = counter.getCounts();
 		List<Object> toRemove = Lists.newArrayList();
-		
+
 		for (Object o : counts.keySet()) {
 			FenceStat st = (FenceStat) o;
-			
+
 			if (st.getFenceId().equals(MessagesScheme.TOTAL_COUNT_FIELD)) {
 				continue;
 			}
-			
+
 			if (!hasFence(st.getFenceId())) {
 				LOG.debug("Removing stat \"" + st + "\" from counter since fence " + st.getFenceId() + " was deleted.");
 				toRemove.add(o);
 			}
 		}
-		
+
 		counter.wipeObjects(toRemove);
 	}
 
-	private void emitCurrentWindowCounts() {
+	private void emitCurrentWindowCounts(BasicOutputCollector collector) {
 		Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
 		int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();
 		lastModifiedTracker.markAsModified();
 		if (actualWindowLengthInSeconds != windowLengthInSeconds) {
 			LOG.warn(String.format(WINDOW_LENGTH_WARNING_TEMPLATE, actualWindowLengthInSeconds, windowLengthInSeconds));
 		}
-		emit(counts, actualWindowLengthInSeconds);
+		emit(counts, actualWindowLengthInSeconds, collector);
 	}
 
-	private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
+	private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds, BasicOutputCollector collector) {
 		for (Entry<Object, Long> entry : counts.entrySet()) {
 			FenceStat obj = (FenceStat) entry.getKey();
 			Long count = entry.getValue();
@@ -172,16 +171,9 @@ public class RollingCountBolt extends AbstractFenceBolt {
 		}
 	}
 
-	private void countObjAndAck(Tuple tuple) {
-		if (tuple.getSourceComponent().equals("countRollingCountBolt")) {
-			Object obj = tuple.getValue(0);
-			long count = (Long) tuple.getValue(1);
-			counter.incrementCount(obj, count);
-		} else {
-			Object obj = tuple.getValue(0);
-			counter.incrementCount(obj);
-		}
-		collector.ack(tuple);
+	private void countObjAndAck(Tuple tuple, BasicOutputCollector collector) {
+		Object obj = tuple.getValue(0);
+		counter.incrementCount(obj);
 	}
 
 	@Override
