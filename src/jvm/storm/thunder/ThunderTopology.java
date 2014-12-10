@@ -17,12 +17,16 @@ import storm.thunder.bolt.TotalGroupRankingsBolt;
 import storm.thunder.spout.MessagesScheme;
 import storm.thunder.spout.ResultKafkaMapper;
 import storm.thunder.spout.TweetScheme;
-import storm.thunder.util.StormRunner;
 import storm.thunder.util.TopologyFields;
 import backtype.storm.Config;
+import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
+import backtype.storm.generated.AlreadyAliveException;
+import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
+import backtype.storm.utils.Utils;
 
 public class ThunderTopology {
 
@@ -30,21 +34,21 @@ public class ThunderTopology {
 	public static final String KAFKA_TWEET_TOPIC = "tweets";
 	public static final String KAFKA_OUTPUT_TOPIC = "results";
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws AlreadyAliveException, InvalidTopologyException {
 		Config config = new Config();
 		config.setMessageTimeoutSecs(120);
 
 		TopologyBuilder builder = new TopologyBuilder();
 
 		// Kafka Spout
-		ZkHosts zkHosts = new ZkHosts("localhost:2181");
+		ZkHosts zkHosts = new ZkHosts("zookeeper1.storm.tweetfence.com:2181");
 		SpoutConfig spoutConfig = new SpoutConfig(zkHosts, KAFKA_TWEET_TOPIC, "/kafkastorm", UUID.randomUUID().toString());
 		spoutConfig.scheme = new SchemeAsMultiScheme(new TweetScheme());
 		KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
 		builder.setSpout("kafkaSpout", kafkaSpout);
 
 		// Geo filter bolt
-		builder.setBolt("geoFilterBolt", new GeoFilterBolt())
+		builder.setBolt("geoFilterBolt", new GeoFilterBolt(), 3)
 			.shuffleGrouping("kafkaSpout");
 
 		// Trending topology branch
@@ -80,15 +84,22 @@ public class ThunderTopology {
 			.globalGrouping("aggregateBolt");
 
 		Properties props = new Properties();
-		props.put("metadata.broker.list", "localhost:9092");
+		props.put("metadata.broker.list", "kafka1.storm.tweetfence.com:9092");
 		props.put("request.required.acks", "1");
 		props.put("serializer.class", "kafka.serializer.StringEncoder");
 		config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
 
-		try {
-			StormRunner.runTopologyLocally(builder.createTopology(), TOPOLOGY_NAME, config, 60 * 10);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		if (args != null && args.length > 0) {
+			config.setNumWorkers(3);
+
+			StormSubmitter.submitTopology(args[0], config, builder.createTopology());
+		}
+		else {
+			LocalCluster cluster = new LocalCluster();
+			cluster.submitTopology("test", config, builder.createTopology());
+			Utils.sleep(10000);
+			cluster.killTopology("test");
+			cluster.shutdown();
 		}
 	}
 }

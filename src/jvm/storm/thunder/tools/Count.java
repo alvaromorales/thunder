@@ -1,7 +1,10 @@
 package storm.thunder.tools;
 
-public class Count implements FenceStat {
+import java.io.Serializable;
+
+public class Count implements FenceStat, Serializable {
 	
+	private static final long serialVersionUID = -8296512727299253584L;
 	private final String fenceId;
 	private final long count;
 	

@@ -2,7 +2,7 @@ package storm.thunder.tools;
 
 public class FencesDB {
 	
-	public static final String REDIS_HOST = "localhost";
+	public static final String REDIS_HOST = "redis1.storm.tweetfence.com";
 	public static final int REDIS_PORT = 6379;
 	public static final String FENCE_INDEX_KEY = "fences";
 	

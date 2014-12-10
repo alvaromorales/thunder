@@ -25,7 +25,7 @@ import com.google.common.collect.Lists;
 
 public class AggregateBolt extends AbstractFenceBolt {
 
-	private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = 2;
+	private static final int DEFAULT_EMIT_FREQUENCY_IN_SECONDS = 10;
 	private static final int DEFAULT_CLEANUP_FREQUENCY_IN_SECONDS = 60;
 
 	private static final long serialVersionUID = -5583754954739361149L;
@@ -123,7 +123,7 @@ public class AggregateBolt extends AbstractFenceBolt {
 	@Override
 	public Map<String, Object> getComponentConfiguration() {
 		Config conf = new Config();
-		int tickFrequencyInSeconds = 2;
+		int tickFrequencyInSeconds = 10;
 		conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, tickFrequencyInSeconds);
 		return conf;
 	}
